@@ -1,5 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import connectDB from './config/database.ts';
 import dotenv from 'dotenv';
 import cors from 'cors';
 
@@ -18,11 +19,9 @@ app.get('/', (req, res) => {
     res.json({ message: 'API is running' });
 });
 
-// Connect to MongoDB
-mongoose
-    .connect(MONGO_URI)
+// Connect to MongoDB (centralized with retry/backoff)
+connectDB()
     .then(() => {
-        console.log('✅ Connected to MongoDB');
         app.listen(PORT, () => {
             console.log(`🚀 Server listening on port ${PORT}`);
         });
