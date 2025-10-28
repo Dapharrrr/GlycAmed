@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import type { IUser } from './user.model.ts';
+import type { IUser } from './user.model.js';
 
 export interface IConsumption extends Document {
     user: IUser['_id'];

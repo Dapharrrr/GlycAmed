@@ -1,33 +1,22 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 
-dotenv.config();
+export const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGODB_URI;
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/glycamed';
-
-/**
- * connectDB connects to MongoDB with a small retry/backoff logic.
- */
-export default async function connectDB(): Promise<void> {
-    const maxRetries = 5;
-    let attempt = 0;
-
-    while (attempt < maxRetries) {
-        try {
-            await mongoose.connect(MONGO_URI);
-            console.log('✅ Connected to MongoDB');
-            return;
-        } catch (err) {
-            attempt += 1;
-            const delay = Math.min(1000 * 2 ** attempt, 30000);
-            console.error(`MongoDB connection attempt ${attempt} failed:`, err);
-            if (attempt >= maxRetries) {
-                console.error('Exceeded max MongoDB connection attempts.');
-                throw err;
-            }
-            console.log(`Retrying in ${delay}ms...`);
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((res) => setTimeout(res, delay));
-        }
+    if (!mongoURI) {
+      throw new Error('❌ MONGODB_URI is not defined');
     }
-}
+
+    console.log('🔗 Connecting to MongoDB...');
+    console.log('📍 URI:', mongoURI.replace(/\/\/([^:]+):([^@]+)@/, '//$1:****@')); // Masque le password
+
+    await mongoose.connect(mongoURI);
+
+    console.log('✅ MongoDB connected successfully');
+    console.log('📦 Database:', mongoose.connection.db?.databaseName);
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    throw error;
+  }
+};

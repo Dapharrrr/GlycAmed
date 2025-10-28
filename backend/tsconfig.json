@@ -1,9 +1,8 @@
 {
-  "extends": "./tsconfig.build.json",
   "compilerOptions": {
-    "noEmit": true,
-    "allowImportingTsExtensions": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
+    "module": "ESNext",
+    "moduleResolution": "bundler", // ou "node16" / "nodenext"
+    "allowImportingTsExtensions": false, // Par défaut
+    "esModuleInterop": true
+  }
 }
