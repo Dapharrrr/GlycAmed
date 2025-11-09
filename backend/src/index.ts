@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import consumptionRoutes from './routes/consumption.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,8 +32,8 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/consumptions', consumptionRoutes);
 
 app.use((req: Request, res: Response) => {
   console.log(`❌ 404 - Route not found: ${req.method} ${req.path}`);
@@ -71,7 +71,8 @@ async function startServer() {
     const server = app.listen(PORT, () => {
       console.log(`✅ Server running on http://localhost:${PORT}`);
       console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-      console.log(`👥 Users API: http://localhost:${PORT}/api/users`);
+      console.log(` Auth API: http://localhost:${PORT}/api/auth`);
+      console.log(`🍽️  Consumptions API: http://localhost:${PORT}/api/consumptions`);
     });
 
     server.on('error', (err: NodeJS.ErrnoException) => {
