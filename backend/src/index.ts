@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import authRoutes from './routes/auth.routes.js';
 import consumptionRoutes from './routes/consumption.routes.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,6 +15,22 @@ dotenv.config({ path: join(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+// Swagger configuration
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'GlycAmed API',
+      version: '1.0.0',
+      description: 'API documentation for GlycAmed',
+    },
+  },
+  apis: ['./src/routes/*.ts'], // Path to the API docs
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.use(cors());
 app.use(express.json());
