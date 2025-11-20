@@ -1,0 +1,8 @@
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0e0e10 !important; /* noir profond */
+  overflow-x: hidden;
+}
