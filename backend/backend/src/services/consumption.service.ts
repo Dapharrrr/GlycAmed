@@ -1,5 +1,6 @@
 import Consumption, { IConsumption } from '../models/consumption.model';
 import { CreateConsumptionDto, UpdateConsumptionDto, ConsumptionFilterDto } from '../types/dtos/consumption.dto';
+import mongoose from 'mongoose';
 import { OpenFoodFactsService } from './openFoodFacts.service';
 
 export class ConsumptionService {
@@ -122,7 +123,9 @@ export class ConsumptionService {
   }
 
   static async getNutrientsSummary(userId: string, startDate?: string, endDate?: string) {
-    const matchQuery: any = { user: userId };
+        const matchQuery: any = { 
+      user: new mongoose.Types.ObjectId(userId)
+    };
 
     if (startDate || endDate) {
       matchQuery.date = {};
