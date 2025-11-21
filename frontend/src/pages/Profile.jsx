@@ -22,16 +22,23 @@ export default function Profile() {
     alert("Profil mis à jour !");
   }
 
-  if (!form) return <p style={{ color: "white" }}>Chargement...</p>;
+  if (!form) return <p>Chargement...</p>;
 
-  const container = {
+  const card = {
     maxWidth: "600px",
     margin: "50px auto",
     padding: "30px",
-    background: "#1c1c1c",
-    borderRadius: "20px",
-    boxShadow: "0 0 20px rgba(0,0,0,0.4)",
-    color: "white",
+    background: "white",
+    borderRadius: "14px",
+    border: "1px solid #e7e7e7",
+    boxShadow: "0 6px 16px rgba(90, 79, 207, 0.10)",
+  };
+
+  const label = {
+    fontWeight: "600",
+    marginBottom: "6px",
+    display: "block",
+    color: "#333",
   };
 
   const input = {
@@ -39,34 +46,37 @@ export default function Profile() {
     padding: "12px 15px",
     marginBottom: "18px",
     borderRadius: "10px",
-    border: "1px solid #3a3a3a",
-    background: "#111",
-    color: "white",
+    border: "1px solid #d1d1d1",
+    background: "white",
+    color: "#333",
     fontSize: "15px",
-  };
-
-  const label = {
-    fontWeight: "600",
-    marginBottom: "6px",
-    display: "block",
   };
 
   const button = {
     width: "100%",
     padding: "12px",
-    background: "#36B9CC",
+    background: "#5A4FCF",
+    color: "white",
     border: "none",
     borderRadius: "10px",
-    color: "white",
     fontWeight: "600",
     cursor: "pointer",
     transition: "0.2s",
+    outline: "2px solid black", 
     fontSize: "16px",
   };
 
+
   return (
-    <div style={container}>
-      <h2 style={{ textAlign: "center", marginBottom: "25px", fontSize: "28px" }}>
+    <div style={card}>
+      <h2
+        style={{
+          textAlign: "center",
+          marginBottom: "25px",
+          fontSize: "28px",
+          color: "#5A4FCF",
+        }}
+      >
         Mon profil
       </h2>
 
@@ -100,7 +110,12 @@ export default function Profile() {
         />
       </div>
 
-      <button style={button} onClick={handleSave}>
+      <button
+        style={button}
+        onMouseEnter={(e) => (e.target.style.background = "#4A3DB0")}
+        onMouseLeave={(e) => (e.target.style.background = "#5A4FCF")}
+        onClick={handleSave}
+      >
         Enregistrer
       </button>
     </div>

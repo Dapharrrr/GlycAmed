@@ -1,17 +1,13 @@
 import { useState } from "react";
 import axiosInstance from "../api/axiosInstance";
 
-// -----------------------------------------------------
-// Fonction qui extrait userId depuis le JWT en localStorage
-// -----------------------------------------------------
 function getUserIdFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
 
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.userId;
-  } catch (err) {
+    return JSON.parse(atob(token.split(".")[1])).userId;
+  } catch {
     return null;
   }
 }
@@ -20,99 +16,87 @@ export default function AddConsumption() {
   const [query, setQuery] = useState("");
   const [barcode, setBarcode] = useState("");
   const [results, setResults] = useState([]);
+  const [page, setPage] = useState(1);
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(100);
   const [calculated, setCalculated] = useState(null);
 
-  // --------------------------
-  // SEARCH BY NAME
-  // --------------------------
   async function searchByName() {
+    if (!query.trim()) return;
+
     const res = await axiosInstance.get(
       `/consumptions/products/search?query=${query}`
     );
-    setResults(res.data.data || []);
+
+    const list = res.data.data || [];
+
+    setResults(list);
+    setPage(1);
   }
 
-  // --------------------------
-  // SEARCH BY BARCODE
-  // --------------------------
   async function searchByBarcode() {
+    if (!barcode.trim()) return;
+
     const res = await axiosInstance.get(
       `/consumptions/products/barcode/${barcode}`
     );
 
     const product = res.data.data;
+
     if (product) {
       setSelectedProduct(product);
-      setQuery(product.name || "");
+      setQuery(product.name);
       setResults([]);
     }
   }
 
-  // --------------------------
-  // SELECT PRODUCT
-  // --------------------------
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+  const paginated = results.slice(
+    (page - 1) * ITEMS_PER_PAGE,
+    page * ITEMS_PER_PAGE
+  );
+
   function selectProduct(p) {
     setSelectedProduct(p);
-    setQuery(p.name);
     setBarcode(p.barcode || "");
     setResults([]);
   }
 
-  // --------------------------
-  // CALCULATE NUTRIENTS (FIX FINAL)
-  // --------------------------
   async function calculateNutrients() {
-  if (!selectedProduct) {
-    alert("Aucun produit sélectionné.");
-    return;
+    if (!selectedProduct) return alert("Sélectionne un produit.");
+
+    const n = selectedProduct.nutrients;
+    if (!n) return alert("Données nutritionnelles manquantes.");
+
+    const body = {
+      product: {
+        nutrients: {
+          sugars: Number(n.sugars),
+          caffeine: Number(n.caffeine) * 1000, 
+          calories: Number(n.calories),
+        },
+      },
+      quantity: Number(quantity),
+    };
+
+    try {
+      const res = await axiosInstance.post(
+        "/consumptions/products/calculate-nutrients",
+        body
+      );
+
+      setCalculated(res.data.data.calculatedNutrients);
+    } catch (err) {
+      alert("Erreur lors du calcul.");
+      console.error(err);
+    }
   }
 
-  // Les nutriments normalisés par ton backend
-  const nutrients = selectedProduct.nutrients;
-
-  if (!nutrients) {
-    alert("Ce produit ne contient pas les données nutritionnelles nécessaires.");
-    return;
-  }
-
-  // 🔥 FORMAT EXACTEMENT COMME L’ATTEND LE BACKEND
-  const body = {
-    product: {
-      nutrients: {
-        sugars: Number(nutrients.sugars),
-        caffeine: Number(nutrients.caffeine),
-        calories: Number(nutrients.calories)
-      }
-    },
-    quantity: Number(quantity)
-  };
-
-
-  try {
-    const res = await axiosInstance.post(
-      "/consumptions/products/calculate-nutrients",
-      body
-    );
-
-    setCalculated(res.data.data.calculatedNutrients);
-  } catch (err) {
-    console.error("API ERROR:", err.response?.data || err);
-    alert("Erreur lors du calcul !");
-  }
-}
-
-
-  // --------------------------
-  // SAVE CONSUMPTION
-  // --------------------------
   async function saveConsumption() {
     const userId = getUserIdFromToken();
-    if (!userId) {
-      alert("Vous devez être connecté.");
-      return;
-    }
+    if (!userId) return alert("Vous devez être connecté.");
 
     await axiosInstance.post("/consumptions", {
       userId,
@@ -131,176 +115,192 @@ export default function AddConsumption() {
     setQuantity(100);
   }
 
-  // --------------------------
-  // Styles
-  // --------------------------
-  const inputStyle = {
-    padding: "12px 15px",
+  const card = {
+    background: "#ffffff",
+    borderRadius: "14px",
+    padding: "25px",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+    border: "1px solid #e7e7e7",
+    marginBottom: "25px",
+  };
+
+  const input = {
+    padding: "12px 14px",
     width: "100%",
-    borderRadius: "10px",
-    border: "1px solid #3a3a3a",
-    background: "#1e1e1e",
-    color: "white",
-    marginBottom: "12px",
-    fontSize: "16px",
+    borderRadius: "8px",
+    border: "1px solid #d1d1d1",
+    background: "white",
+    marginBottom: "8px",
+    fontSize: "15px",
   };
 
-  const buttonStyle = {
-    padding: "10px 20px",
-    background: "#36B9CC",
-    border: "none",
-    borderRadius: "10px",
+    const button = {
+    padding: "10px 15px",
+    background: "#5A4FCF",
     color: "white",
-    fontWeight: "600",
+    fontWeight: 600,
+    borderRadius: "8px",
     cursor: "pointer",
+    width: "100%",
+    marginTop: "10px",
     transition: "0.2s",
-    marginBottom: "10px",
+    outline: "none", 
+  };
+    const buttonHover = {
+    background: "#4A3DB0", 
   };
 
-  const container = {
-    maxWidth: "600px",
-    margin: "0 auto",
-    marginTop: "40px",
-    background: "#1b1b1b",
-    padding: "30px 40px",
-    borderRadius: "20px",
-    boxShadow: "0 0 25px rgba(0,0,0,0.35)",
-    color: "white",
-  };
-
-  const mb2 = { marginBottom: "12px" };
 
   return (
-    <div style={{ display: "flex", justifyContent: "center" }}>
-      <div style={container}>
-        <h2 style={{ textAlign: "center", marginBottom: "20px" }}>
-          Ajouter une consommation
-        </h2>
+    <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px" }}>
+      <div style={card}>
+        <h2 style={{ color: "#5A4FCF" }}>Rechercher un produit</h2>
 
-        {/* Recherche par nom */}
-        <h3 style={mb2}>Rechercher par nom</h3>
-        <input
-          type="text"
-          placeholder="Ex: Coca-Cola, Café, Pomme…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          style={inputStyle}
-        />
-        <button onClick={searchByName} style={buttonStyle}>
-          Rechercher
-        </button>
+        <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", marginBottom: "10px" }}>Par nom</label>
+            <input
+              style={input}
+              placeholder="Ex : Monster, Coca..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <button
+              style={button}
+              onMouseEnter={(e) => (e.target.style.background = buttonHover.background)}
+              onMouseLeave={(e) => (e.target.style.background = button.background)}
+              onClick={searchByName}
+            >
+              Rechercher par nom
+            </button>
+          </div>
 
-        {/* Résultats */}
-        {results.length > 0 && (
-          <div style={{ marginTop: "20px" }}>
-            <h3>Résultats</h3>
+          {/* Recherche par code-barres */}
+          <div style={{ flex: 1 }}>
+            <label style={{ display: "block", marginBottom: "10px" }}>Par code-barres</label>
+            <input
+              style={input}
+              placeholder="Ex : 5449000000996"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+            />
+            <button
+              style={button}
+              onMouseEnter={(e) => (e.target.style.background = buttonHover.background)}
+              onMouseLeave={(e) => (e.target.style.background = button.background)}
+              onClick={searchByBarcode}
+            >
+              Rechercher par code-barres
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div
+      {results.length > 0 && (
+        <div style={card}>
+          <h2 style={{ color: "#5A4FCF" }}>Résultats ({results.length})</h2>
+
+          <div style={{ margin: "10px 0 20px 0", display: "flex", gap: "15px" }}>
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
               style={{
-                background: "#111",
-                borderRadius: "12px",
-                padding: "10px",
-                marginTop: "10px",
+                ...button,
+                width: "150px",
+                background: page === 1 ? "#ccc" : "#5A4FCF",
+              }}
+              onMouseEnter={(e) => {
+                if (page !== 1) e.target.style.background = "#4A3DB0";
+              }}
+              onMouseLeave={(e) => {
+                if (page !== 1) e.target.style.background = "#5A4FCF";
               }}
             >
-              {results.map((p) => (
-                <div
-                  key={p.barcode}
-                  onClick={() => selectProduct(p)}
-                  style={{
-                    cursor: "pointer",
-                    padding: "12px",
-                    borderBottom: "1px solid #2a2a2a",
-                    transition: "0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#2a2a2a")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  <strong>{p.name}</strong>
-                  <br />
-                  <small>Code-barres : {p.barcode}</small>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recherche code-barres */}
-        <h3 style={{ ...mb2, marginTop: "25px" }}>
-          Scanner ou entrer un code-barres
-        </h3>
-
-        <input
-          type="text"
-          placeholder="Ex: 5449000000996"
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          style={inputStyle}
-        />
-
-        <button onClick={searchByBarcode} style={buttonStyle}>
-          Chercher
-        </button>
-
-        {/* Produit sélectionné */}
-        {selectedProduct && (
-          <div style={{ marginTop: "30px" }}>
-            <h3>{selectedProduct.name}</h3>
-
-            <p style={{ marginTop: "10px" }}>Quantité consommée (g/ml)</p>
-
-            <input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              style={inputStyle}
-            />
-
-            <button
-              onClick={calculateNutrients}
-              style={{ ...buttonStyle, marginTop: "10px" }}
-            >
-              Calculer les nutriments
+              ⬅ Précédent
             </button>
 
-            {calculated && (
-              <div
-                style={{
-                  marginTop: "25px",
-                  background: "#111",
-                  padding: "20px",
-                  borderRadius: "15px",
-                }}
-              >
-                <p>
-                  <strong>Sucre :</strong> {calculated.sugars} g
-                </p>
-                <p>
-                  <strong>Caféine :</strong> {calculated.caffeine} mg
-                </p>
-                <p>
-                  <strong>Calories :</strong> {calculated.calories}
-                </p>
 
-                <button
-                  onClick={saveConsumption}
-                  style={{
-                    ...buttonStyle,
-                    marginTop: "15px",
-                    background: "#1CC88A",
-                  }}
-                >
-                  Enregistrer
-                </button>
-              </div>
-            )}
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+              style={{
+                ...button,
+                width: "150px",
+                background: page === totalPages ? "#ccc" : "#5A4FCF",
+              }}
+              onMouseEnter={(e) => {
+                if (page !== totalPages) e.target.style.background = "#4A3DB0";
+              }}
+              onMouseLeave={(e) => {
+                if (page !== totalPages) e.target.style.background = "#5A4FCF";
+              }}
+            >
+              Suivant ➜
+            </button>
           </div>
-        )}
-      </div>
+
+          {paginated.map((p) => (
+            <div
+              key={p.barcode}
+              onClick={() => selectProduct(p)}
+              style={{
+                padding: "14px 10px",
+                borderBottom: "1px solid #e2e2e2",
+                cursor: "pointer",
+              }}
+            >
+              <strong>{p.name}</strong>
+              <br />
+              <small style={{ color: "#777" }}>Code-barres : {p.barcode}</small>
+            </div>
+          ))}
+        </div>
+      )}
+      {selectedProduct && (
+        <div style={card}>
+         <h2 style={{ color: "#5A4FCF", marginBottom: "10px" }}>
+          {selectedProduct.name}
+        </h2>
+
+        <label style={{ marginBottom: "10px", display: "block" }}>
+          Quantité (g/ml)
+        </label>
+
+        <input
+          style={input}
+          type="number"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+        />
+
+        <button style={button} onClick={calculateNutrients}>
+          Calculer les nutriments
+        </button>
+          {calculated && (
+            <div
+              style={{
+                marginTop: "20px",
+                background: "#f7f7f7",
+                padding: "18px",
+                borderRadius: "10px",
+              }}
+            >
+              <p><strong>Sucre :</strong> {calculated.sugars} g</p>
+              <p><strong>Caféine :</strong> {calculated.caffeine} mg</p>
+              <p><strong>Calories :</strong> {calculated.calories}</p>
+
+              <button
+                style={{ ...button, background: "#1cc88a" }}
+                onMouseEnter={(e) => (e.target.style.background = "#17a673")}
+                onMouseLeave={(e) => (e.target.style.background = "#1cc88a")}
+                onClick={saveConsumption}
+              >
+                Enregistrer
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,85 +1,108 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import "../styles/navbar.css";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  const toggleMenu = () => setOpen(!open);
+  const closeMenu = () => setOpen(false);
 
   return (
-    <nav
-      style={{
-        background: "#4E73DF",
-        padding: "12px 20px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        color: "white",
-        marginBottom: "20px",
-      }}
-    >
-      <Link
-        to="/"
-        style={{
-          color: "white",
-          textDecoration: "none",
-          fontSize: "20px",
-          fontWeight: "600",
-        }}
-      >
-        GlycAmed
-      </Link>
+    <nav className="navbar">
 
-      <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+      {/* LOGO */}
+      <div className="nav-logo">
+        <Link to="/" onClick={closeMenu}>
+          GlycAmed
+        </Link>
+      </div>
+
+      {/* BURGER */}
+      <div className={`nav-toggle ${open ? "open" : ""}`} onClick={toggleMenu}>
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+
+      {/* LINKS */}
+      <div className={`nav-links ${open ? "active" : ""}`}>
         {user && (
           <>
-            <Link to="/dashboard" style={{ color: "white" }}>
+            <Link
+              to="/dashboard"
+              className={location.pathname === "/dashboard" ? "active" : ""}
+              onClick={closeMenu}
+            >
               Dashboard
             </Link>
-            <Link to="/add" style={{ color: "white" }}>
-              Add
+
+            <Link
+              to="/add"
+              className={location.pathname === "/add" ? "active" : ""}
+              onClick={closeMenu}
+            >
+              Ajouter
             </Link>
-            <Link to="/history" style={{ color: "white" }}>
-              History
+
+            <Link
+              to="/history"
+              className={location.pathname === "/history" ? "active" : ""}
+              onClick={closeMenu}
+            >
+              Historique
             </Link>
-            <Link to="/statistics" style={{ color: "white" }}>
-              Stats
+
+            <Link
+              to="/statistics"
+              className={location.pathname === "/statistics" ? "active" : ""}
+              onClick={closeMenu}
+            >
+              Statistiques
             </Link>
-            <Link to="/leaderboard" style={{ color: "white" }}>
+
+            <Link
+              to="/leaderboard"
+              className={location.pathname === "/leaderboard" ? "active" : ""}
+              onClick={closeMenu}
+            >
               Leaderboard
             </Link>
 
-            {/* 🔥 NOUVEAU : Profil */}
-            <Link to="/profile" style={{ color: "white" }}>
-              Profile
+            <Link
+              to="/profile"
+              className={location.pathname === "/profile" ? "active" : ""}
+              onClick={closeMenu}
+            >
+              Profil
             </Link>
+
+            <button className="logout-btn" onClick={() => { logout(); closeMenu(); }}>
+              Logout
+            </button>
           </>
         )}
 
         {!user && (
           <>
-            <Link to="/login" style={{ color: "white" }}>
+            <Link
+              to="/login"
+              className={location.pathname === "/login" ? "active" : ""}
+              onClick={closeMenu}
+            >
               Login
             </Link>
-            <Link to="/register" style={{ color: "white" }}>
+            <Link
+              to="/register"
+              className={location.pathname === "/register" ? "active" : ""}
+              onClick={closeMenu}
+            >
               Register
             </Link>
           </>
-        )}
-
-        {user && (
-          <button
-            onClick={logout}
-            style={{
-              background: "white",
-              color: "#4E73DF",
-              borderRadius: "6px",
-              padding: "5px 12px",
-              border: "none",
-              cursor: "pointer",
-              fontWeight: "600",
-            }}
-          >
-            Logout
-          </button>
         )}
       </div>
     </nav>

@@ -1,25 +1,38 @@
 import { Request, Response } from 'express';
 import { ConsumptionService } from '../services/consumption.service';
 import { OpenFoodFactsService } from '../services/openFoodFacts.service';
-import { CreateConsumptionDto, UpdateConsumptionDto, ConsumptionFilterDto, ProductSearchDto } from '../types/dtos/consumption.dto';
+import {
+  CreateConsumptionDto,
+  UpdateConsumptionDto,
+  ConsumptionFilterDto,
+  ProductSearchDto
+} from '../types/dtos/consumption.dto';
 
 export class ConsumptionController {
+
+  // ------------------------------------------------------
+  // CREATE CONSUMPTION
+  // ------------------------------------------------------
   static async createConsumption(req: Request, res: Response): Promise<void> {
     try {
       const contributorId = req.userId!;
       const consumptionData: CreateConsumptionDto = req.body;
 
       const consumption = await ConsumptionService.createConsumption(
-        consumptionData.userId, 
-        contributorId, 
+        consumptionData.userId,
+        contributorId,
         consumptionData
       );
+
       res.status(201).json({ success: true, data: consumption });
     } catch (err) {
       res.status(400).json({ success: false, error: (err as Error).message });
     }
   }
 
+  // ------------------------------------------------------
+  // GET CONSUMPTIONS (history)
+  // ------------------------------------------------------
   static async getConsumptions(req: Request, res: Response): Promise<void> {
     try {
       const filters: ConsumptionFilterDto = {
@@ -33,7 +46,6 @@ export class ConsumptionController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
-      // Use userId from filters or default to the authenticated user
       const userId = filters.userId || req.userId!;
 
       const result = await ConsumptionService.getConsumptions(userId, filters);
@@ -43,11 +55,14 @@ export class ConsumptionController {
     }
   }
 
+  // ------------------------------------------------------
+  // GET ONE CONSUMPTION
+  // ------------------------------------------------------
   static async getConsumption(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const consumption = await ConsumptionService.getConsumptionById(id);
-      
+
       if (!consumption) {
         res.status(404).json({ success: false, error: 'Consumption not found' });
         return;
@@ -59,29 +74,43 @@ export class ConsumptionController {
     }
   }
 
+  // ------------------------------------------------------
+  // UPDATE CONSUMPTION
+  // ------------------------------------------------------
   static async updateConsumption(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const contributorId = req.userId!;
       const updateData: UpdateConsumptionDto = req.body;
 
-      const consumption = await ConsumptionService.updateConsumption(id, contributorId, updateData);
+      const consumption = await ConsumptionService.updateConsumption(
+        id,
+        contributorId,
+        updateData
+      );
+
       res.json({ success: true, data: consumption });
     } catch (err) {
-      const status = (err as Error).message.includes('not found or you are not authorized') ? 404 : 400;
+      const status = (err as Error).message.includes('not found') ? 404 : 400;
       res.status(status).json({ success: false, error: (err as Error).message });
     }
   }
 
+  // ------------------------------------------------------
+  // DELETE CONSUMPTION
+  // ------------------------------------------------------
   static async deleteConsumption(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const contributorId = req.userId!;
 
       const deleted = await ConsumptionService.deleteConsumption(id, contributorId);
-      
+
       if (!deleted) {
-        res.status(404).json({ success: false, error: 'Consumption not found or you are not authorized to delete it' });
+        res.status(404).json({
+          success: false,
+          error: 'Consumption not found or unauthorized',
+        });
         return;
       }
 
@@ -91,14 +120,17 @@ export class ConsumptionController {
     }
   }
 
+  // ------------------------------------------------------
+  // SEARCH PRODUCTS
+  // ------------------------------------------------------
   static async searchProducts(req: Request, res: Response): Promise<void> {
     try {
       const { barcode, query }: ProductSearchDto = req.query;
 
       if (!barcode && !query) {
-        res.status(400).json({ 
-          success: false, 
-          error: 'Either barcode or query parameter is required' 
+        res.status(400).json({
+          success: false,
+          error: 'Either barcode or query parameter is required',
         });
         return;
       }
@@ -110,11 +142,14 @@ export class ConsumptionController {
     }
   }
 
+  // ------------------------------------------------------
+  // GET PRODUCT BY BARCODE
+  // ------------------------------------------------------
   static async getProductByBarcode(req: Request, res: Response): Promise<void> {
     try {
       const { barcode } = req.params;
       const product = await OpenFoodFactsService.getProductByBarcode(barcode);
-      
+
       if (!product) {
         res.status(404).json({ success: false, error: 'Product not found' });
         return;
@@ -126,50 +161,58 @@ export class ConsumptionController {
     }
   }
 
-    static async calculateNutrients(req: Request, res: Response): Promise<void> {
-      try {
-        const { product, quantity } = req.body;
+  // ------------------------------------------------------
+  // CALCULATE NUTRIENTS
+  // ------------------------------------------------------
+  static async calculateNutrients(req: Request, res: Response): Promise<void> {
+    try {
+      const { product, quantity } = req.body;
 
-        if (!product || !quantity) {
-          res.status(400).json({
-            success: false,
-            error: "Product and quantity are required"
-          });
-          return;
-        }
-
-        const calculated = OpenFoodFactsService.calculateNutrients(
-          product.nutrients,
-          quantity
-        );
-
-        res.json({
-          success: true,
-          data: {
-            calculatedNutrients: calculated
-          }
-        });
-
-      } catch (err) {
-        res.status(500).json({
+      if (!product || !quantity) {
+        res.status(400).json({
           success: false,
-          error: (err as Error).message,
+          error: 'Product and quantity are required',
         });
+        return;
       }
+
+      const calculated = OpenFoodFactsService.calculateNutrients(
+        product.nutrients,
+        quantity
+      );
+
+      res.json({
+        success: true,
+        data: {
+          calculatedNutrients: calculated,
+        },
+      });
+    } catch (err) {
+      res.status(500).json({
+        success: false,
+        error: (err as Error).message,
+      });
     }
+  }
 
-
+  // ------------------------------------------------------
+  // DASHBOARD SUMMARY (fixed)
+  // ------------------------------------------------------
   static async getNutrientsSummary(req: Request, res: Response): Promise<void> {
     try {
-      const { userId, startDate, endDate } = req.query;
-      
-      // Use userId from query or default to the authenticated user
-      const targetUserId = (userId as string) || req.userId!;
-      
+      const targetUserId = (req.query.userId as string) || req.userId!;
+
+      // Intervalle du jour
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+
       const summary = await ConsumptionService.getNutrientsSummary(
         targetUserId,
-        startDate as string,
-        endDate as string
+        start.toISOString(),
+        end.toISOString()
       );
 
       res.json({ success: true, data: summary });
